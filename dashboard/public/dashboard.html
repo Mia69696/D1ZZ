@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>d1z — Select Server</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#09090f;--bg2:#0d0d18;--surface:#13131f;--surface2:#1a1a2e;--border:rgba(255,255,255,0.07);--accent:#5865f2;--accent2:#7289ff;--text:#f0f0ff;--text2:#9999bb;--text3:#5555aa;--green:#43b581;--radius:12px}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
+.grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(88,101,242,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(88,101,242,.03) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
+nav{position:sticky;top:0;z-index:10;background:rgba(9,9,15,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;background:linear-gradient(135deg,#fff,var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none}
+.user-row{display:flex;align-items:center;gap:.6rem;font-size:.85rem;color:var(--text2)}
+.user-row img{width:28px;height:28px;border-radius:50%}
+.logout{color:var(--text3);text-decoration:none;font-size:.8rem;padding:.35rem .8rem;border:1px solid var(--border);border-radius:6px;transition:all .2s}
+.logout:hover{background:rgba(255,255,255,.05);color:var(--text2)}
+.container{max-width:900px;margin:0 auto;padding:3rem 2rem;position:relative;z-index:1}
+h1{font-family:'Syne',sans-serif;font-weight:800;font-size:2rem;letter-spacing:-.02em;margin-bottom:.4rem}
+p.sub{color:var(--text2);margin-bottom:2.5rem}
+.search{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.7rem 1rem;color:var(--text);font-size:.9rem;width:100%;max-width:360px;outline:none;font-family:'Inter',sans-serif;margin-bottom:2rem;transition:border-color .2s}
+.search:focus{border-color:var(--accent)}
+.search::placeholder{color:var(--text3)}
+.guilds-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem}
+.guild-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.5rem;display:flex;align-items:center;gap:1rem;
+  text-decoration:none;color:var(--text);
+  transition:all .2s;cursor:pointer;
+}
+.guild-card:hover{background:var(--surface2);border-color:rgba(88,101,242,.3);transform:translateY(-2px)}
+.guild-card img,.guild-icon-placeholder{width:52px;height:52px;border-radius:12px;flex-shrink:0;object-fit:cover}
+.guild-icon-placeholder{background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;color:#fff}
+.guild-info h3{font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.guild-info p{font-size:.75rem;color:var(--text3);margin-top:.2rem}
+.guild-card .arrow{margin-left:auto;color:var(--text3);font-size:1.1rem}
+.guild-card:hover .arrow{color:var(--accent2)}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:100px;font-size:.68rem;font-weight:600;margin-top:.3rem}
+.badge.active{background:rgba(67,181,129,.12);color:var(--green)}
+.badge.inactive{background:rgba(255,255,255,.06);color:var(--text3)}
+.invite-card{
+  background:rgba(88,101,242,.06);border:1px dashed rgba(88,101,242,.3);
+  border-radius:var(--radius);padding:1.5rem;
+  display:flex;align-items:center;gap:1rem;
+  text-decoration:none;color:var(--text2);transition:all .2s;
+}
+.invite-card:hover{background:rgba(88,101,242,.1);color:var(--text)}
+.invite-plus{width:52px;height:52px;border-radius:12px;background:rgba(88,101,242,.15);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
+.loader{display:flex;align-items:center;justify-content:center;height:200px;flex-direction:column;gap:1rem;color:var(--text3)}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:4rem;color:var(--text3)}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<nav>
+  <a href="/" class="logo">d1z</a>
+  <div class="user-row">
+    <img id="uAvatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt=""/>
+    <span id="uName">–</span>
+    <a href="/auth/logout" class="logout">Logout</a>
+  </div>
+</nav>
+<div class="container">
+  <h1>Select a Server</h1>
+  <p class="sub">Choose a server you manage to open its dashboard.</p>
+  <input type="search" class="search" placeholder="🔍 Search servers…" id="searchInput" oninput="filterGuilds()"/>
+  <div id="guildsContainer"><div class="loader"><div class="spinner"></div><span>Loading your servers…</span></div></div>
+</div>
+<script>
+let allGuilds = [];
+async function init() {
+  try {
+    const [userR, guildsR] = await Promise.all([fetch('/api/me'), fetch('/api/guilds')]);
+    const user = await userR.json();
+    const guilds = await guildsR.json();
+    allGuilds = guilds;
+    if (user.avatar) document.getElementById('uAvatar').src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+    document.getElementById('uName').textContent = user.username || '';
+    renderGuilds(guilds);
+  } catch { renderGuilds([]); }
+}
+function renderGuilds(guilds) {
+  const el = document.getElementById('guildsContainer');
+  if (!guilds.length) {
+    el.innerHTML = `<div class="empty"><div style="font-size:3rem">🤖</div><p style="margin-top:1rem">No servers found where you have admin permissions.</p><p style="margin-top:.5rem;font-size:.85rem">Add d1z to your server first!</p></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="guilds-grid">
+    ${guilds.map(g => {
+      const icon = g.icon ? `<img src="https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png" alt="${g.name}"/>` : `<div class="guild-icon-placeholder">${g.name.charAt(0)}</div>`;
+      return `<a href="/dashboard/${g.id}" class="guild-card">
+        ${icon}
+        <div class="guild-info">
+          <h3>${g.name}</h3>
+          <p>ID: ${g.id}</p>
+          <span class="badge inactive">Configure</span>
+        </div>
+        <span class="arrow">→</span>
+      </a>`;
+    }).join('')}
+    <a href="https://discord.com/api/oauth2/authorize?client_id=${window._clientId || 'YOUR_CLIENT_ID'}&permissions=8&scope=bot%20applications.commands" target="_blank" class="invite-card">
+      <div class="invite-plus">+</div>
+      <div><strong>Add to a Server</strong><p style="font-size:.78rem;margin-top:.2rem;color:var(--text3)">Invite d1z to a new server</p></div>
+    </a>
+  </div>`;
+}
+function filterGuilds() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  renderGuilds(allGuilds.filter(g => g.name.toLowerCase().includes(q)));
+}
+init();
+</script>
+</body>
+</html>
